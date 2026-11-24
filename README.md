@@ -28,3 +28,36 @@ cargo run
 번역 및 요약의 기반이 된 [Rust Design Patterns](https://github.com/rust-unofficial/patterns)는
 MPL-2.0으로 배포됩니다. 라이선스 전문은 [LICENSE](LICENSE)를 참고하세요.
 한국어 번역 문서의 출처와 범위는 [NOTICE.md](NOTICE.md)에 기록되어 있습니다.
+
+----
+
+1. GitHub 저장소 만들기
+GitHub 새 저장소 만들기에서 저장소 이름을 입력하고 공개 여부를 선택하세요. README, .gitignore, 라이선스는 추가하지 않고 빈 저장소로 만듭니다. 프로젝트에 이미 해당 파일들이 있습니다.
+
+2. 프로젝트에서 Git 초기화
+
+```sh
+git init -b main
+git add .
+git status
+git diff --cached
+```
+
+3. 커밋하고 GitHub에 올리기
+아래 주소에서 사용자이름과 저장소이름을 실제 값으로 바꾸세요.
+
+```sh
+git commit -m "Initial commit"
+git remote add origin https://github.com/사용자이름/저장소이름.git
+git push -u origin main
+```
+
+ 이후 변경 사항을 올릴 때는 다음을 실행하면 됩니다.
+
+```sh
+git add .
+git status
+git diff --cached
+git commit -m "변경 내용"
+git push
+```
