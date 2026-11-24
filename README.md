@@ -10,12 +10,31 @@ Axum으로 만든 한국어 Markdown 문서 사이트입니다. 문서는 `conte
 
 ## 실행
 
+프로젝트 루트의 `.env`에서 서버 호스트와 포트를 설정합니다. 새로 내려받았다면
+`.env.example`을 `.env`로 복사하세요.
+
+```powershell
+Copy-Item .env.example .env
+```
+
+```dotenv
+HOST=0.0.0.0
+PORT=3000
+```
+
+`.env`가 없거나 항목이 빠지면 위 값이 기본값입니다. 기존 환경 변수가 `.env`보다
+우선하며, 잘못된 포트나 빈 호스트는 오류로 처리합니다. `HOST=0.0.0.0`은 모든
+IPv4 인터페이스에서 접속을 허용합니다. 같은 Wi-Fi의 스마트폰에서는
+`http://<PC의 IPv4 주소>:3000`으로 접속하며, Windows 방화벽에서도 해당 포트를
+허용해야 합니다. PC에서만 접속하려면 `HOST=127.0.0.1`로 설정하세요.
+`.env`는 Git에서 제외되며, 설정을 변경한 후 서버를 다시 시작해야 합니다.
+
 ```powershell
 cargo run
 ```
 
-브라우저에서 <http://127.0.0.1:3000>을 여세요. 상태 확인 주소는
-<http://127.0.0.1:3000/health>입니다.
+기본 설정에서는 브라우저에서 <http://127.0.0.1:3000>을 여세요. 상태 확인 주소는
+<http://127.0.0.1:3000/health>입니다. 포트를 변경했다면 주소에도 변경된 포트를 사용하세요.
 
 ## 번역 범위
 
@@ -46,7 +65,7 @@ git diff --cached
 3. 커밋하고 GitHub에 올리기
 아래 주소에서 사용자이름과 저장소이름을 실제 값으로 바꾸세요.
 
-```sh
+`
 git commit -m "Initial commit"
 git remote add origin https://github.com/사용자이름/저장소이름.git
 git push -u origin main

@@ -9,6 +9,24 @@ use maud::{DOCTYPE, Markup, PreEscaped, html};
 use pulldown_cmark::{Options, Parser, html as markdown_html};
 use std::collections::HashMap;
 
+fn server_address(host: String, port: &str) -> Result<(String, u16), Box<dyn std::error::Error>> {
+    if host.trim().is_empty() {
+        return Err("HOST는 비어 있을 수 없습니다".into());
+    }
+    let port = port
+        .parse::<u16>()
+        .map_err(|error| format!("PORT가 올바르지 않습니다: {error}"))?;
+    Ok((host, port))
+}
+
+fn environment_or_default(name: &str, default: &str) -> Result<String, std::env::VarError> {
+    match std::env::var(name) {
+        Ok(value) => Ok(value),
+        Err(std::env::VarError::NotPresent) => Ok(default.to_owned()),
+        Err(error) => Err(error),
+    }
+}
+
 #[derive(Clone, Copy)]
 struct Page {
     slug: &'static str,
@@ -1013,6 +1031,16 @@ document.querySelector(".nav").addEventListener("click", (event) => {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if let Err(error) = dotenvy::dotenv() {
+        if !matches!(&error, dotenvy::Error::Io(io) if io.kind() == std::io::ErrorKind::NotFound) {
+            return Err(error.into());
+        }
+    }
+    let (host, port) = server_address(
+        environment_or_default("HOST", "0.0.0.0")?,
+        &environment_or_default("PORT", "3000")?,
+    )?;
+
     let app = Router::new()
         .route("/", get(home))
         .route("/search", get(search))
@@ -1020,9 +1048,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/assets/cozysoft-logo.svg", get(cozysoft_logo))
         .route("/health", get(|| async { "ok" }));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-    println!("한국어 Rust 패턴 안내서: http://127.0.0.1:3000");
-    println!("스마트폰은 같은 Wi-Fi에서 http://<PC의 IPv4 주소>:3000 으로 접속하세요.");
+    let listener = tokio::net::TcpListener::bind((host.as_str(), port)).await?;
+    let address = listener.local_addr()?;
+    println!("서버 수신 주소: {address}");
+    if address.ip().is_unspecified() {
+        let loopback = if address.is_ipv4() {
+            "127.0.0.1"
+        } else {
+            "[::1]"
+        };
+        println!(
+            "한국어 Rust 패턴 안내서: http://{loopback}:{}",
+            address.port()
+        );
+        if address.is_ipv4() {
+            println!(
+                "스마트폰은 같은 Wi-Fi에서 http://<PC의 IPv4 주소>:{} 으로 접속하세요.",
+                address.port()
+            );
+        }
+    } else {
+        println!("한국어 Rust 패턴 안내서: http://{address}");
+    }
     axum::serve(listener, app).await?;
     Ok(())
 }
@@ -1365,6 +1412,21 @@ fn contains_page(item: &TocItem, slug: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn server_address_accepts_host_and_port() {
+        assert_eq!(
+            server_address("127.0.0.1".into(), "8080").unwrap(),
+            ("127.0.0.1".into(), 8080)
+        );
+    }
+
+    #[test]
+    fn server_address_rejects_empty_host_and_invalid_port() {
+        assert!(server_address(" ".into(), "3000").is_err());
+        assert!(server_address("localhost".into(), "not-a-port").is_err());
+        assert!(server_address("localhost".into(), "65536").is_err());
+    }
 
     #[test]
     fn markdown_keeps_rust_code_blocks() {
